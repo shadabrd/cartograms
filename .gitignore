@@ -1,3 +1,9 @@
+#Ignore git stuff
+.git
+
+#Ignore vagrant stuff
+.vagrant
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
