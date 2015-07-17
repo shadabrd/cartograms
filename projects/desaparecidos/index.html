@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cartograms with d3 &amp; TopoJSON</title>
+    <meta charset="utf-8">
+    <meta property="og:image" content="placeholder.png">
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="../lib/d3-cartogram/lib/colorbrewer.js"></script>
+    <script src="../lib/d3-cartogram/lib/topojson.js"></script>
+    <script src="../lib/d3-cartogram/cartogram.js"></script>
+    <style type="text/css">
+
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.4em;
+        padding: 0;
+        margin: 0;
+      }
+      .states {
+        fill: none;
+        stroke: #fff;
+        stroke-linejoin: round;
+      }
+
+    </style>
+
+  </head>
+  <body>
+    <div id="map-container">
+    </div>
+  </body>
+  <script>
+  var width = 960,
+      height = 500;
+
+  var fill = d3.scale.log()
+      .domain([10, 500])
+      .range(["brown", "steelblue"]);
+      //center: [19.411, -99.16]  var projection = d3.geo.mercator()
+      var projection = d3.geo.mercator()
+        .center([-97.16, 21.411])
+        .scale(1000)
+      // .translate([width / 2, height / 2])
+
+  var path = d3.geo.path()
+      .projection(projection);
+
+  var svg = d3.select("#map-container").append("svg")
+      .attr("width", width)
+      .attr("height", height);
+
+  d3.json("../data/des_estado.json", function(error, mex) {
+    if (error) throw error;
+    console.log(mex);
+    console.log('hey');
+    svg.append("g")
+        .attr("class", "counties")
+      .selectAll("path")
+        .data(topojson.feature(mex, mex.objects.desaparecidos_estatal).features)
+      .enter().append("path")
+        .attr("d", path)
+        .style("fill", function(d) { return fill(path.area(d)); });
+
+    // svg.append("path")
+    //     .datum(topojson.mesh(mex, mex.objects.desaparecidos_estatal, function(a, b) { return a.estado !== b.estado; }))
+    //     .attr("class", "states")
+    //     .attr("d", path);
+  });
+  </script>
+</html>
