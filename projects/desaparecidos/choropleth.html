@@ -19,10 +19,20 @@
       }
       .states {
         fill: none;
-        stroke: #fff;
+        stroke: grey;
         stroke-linejoin: round;
       }
 
+    /*Los colores para las clases de población*/
+    .q0 { fill:#fcc383; }
+    .q1 { fill:#fc9f67; }
+    .q2 { fill:#f4794e; }
+    .q3 { fill:#e65338; }
+    .q4 { fill:#ce2a1d; }
+    .q5 { fill:#b30000; }
+    /*.q6 { fill:rgb(33,113,181); }
+    .q7 { fill:rgb(8,81,156); }
+    .q8 { fill:rgb(8,48,107); }*/
     </style>
 
   </head>
@@ -34,14 +44,15 @@
   var width = 960,
       height = 500;
 
-  var fill = d3.scale.log()
-      .domain([10, 500])
-      .range(["brown", "steelblue"]);
-      //center: [19.411, -99.16]  var projection = d3.geo.mercator()
-      var projection = d3.geo.mercator()
-        .center([-97.16, 21.411])
-        .scale(1000)
-      // .translate([width / 2, height / 2])
+  //Para clasificar en 6 intervalos iguales de población
+  var quantize = d3.scale.quantize()
+      .domain([0, 16000000])
+      .range(d3.range(5).map(function(i) { return "q" + i; }));
+
+  var projection = d3.geo.mercator()
+    .center([-97.16, 21.411])
+    .scale(1000)
+  // .translate([width / 2, height / 2])
 
   var path = d3.geo.path()
       .projection(projection);
@@ -52,20 +63,23 @@
 
   d3.json("../data/des_estado.json", function(error, mex) {
     if (error) throw error;
-    console.log(mex);
-    console.log('hey');
     svg.append("g")
         .attr("class", "counties")
-      .selectAll("path")
+        .selectAll("path")
         .data(topojson.feature(mex, mex.objects.desaparecidos_estatal).features)
-      .enter().append("path")
+        .enter().append("path")
+        .attr("class", function(d) {
+            return quantize(d.properties['POB1']);
+            })
         .attr("d", path)
-        .style("fill", function(d) { return fill(path.area(d)); });
-
-    // svg.append("path")
-    //     .datum(topojson.mesh(mex, mex.objects.desaparecidos_estatal, function(a, b) { return a.estado !== b.estado; }))
-    //     .attr("class", "states")
-    //     .attr("d", path);
+    //pintar las fronteras de los estados
+    svg.append("path")
+        .datum(topojson.mesh(mex, mex.objects.desaparecidos_estatal,
+                function(a, b) {
+                  return a.properties.estado !== b.properties.estado;
+                  }))
+        .attr("class", "states")
+        .attr("d", path);
   });
   </script>
 </html>
