@@ -8,6 +8,7 @@
     <script src="../lib/d3-cartogram/lib/colorbrewer.js"></script>
     <script src="../lib/d3-cartogram/lib/topojson.js"></script>
     <script src="../lib/d3-cartogram/cartogram.js"></script>
+
     <style type="text/css">
 
       body {
@@ -17,6 +18,30 @@
         padding: 0;
         margin: 0;
       }
+      #map-container {
+            height: 500px;
+
+            position: relative;
+            margin: 10px 0;
+      }
+      #map {
+          overflow: visible;
+      }
+      #click_to_run {
+            color:#888;
+            width: 600px;
+            font-size: 2em;
+            text-align: center;
+            cursor: pointer;
+            padding-top: 30px;
+        }
+        path[class^="q"] {
+            stroke: #000000;
+            stroke-width: .5;
+        }
+        path[class^="q"]:hover {
+            stroke: #FFF;
+        }
       .states {
         fill: none;
         stroke: grey;
@@ -37,46 +62,105 @@
 
   </head>
   <body>
+    <div id="click_to_run" onclick="doUpdate()"></div>
     <div id="map-container">
+      <svg id="map"></svg>
     </div>
   </body>
-  <script>
-  var width = 960,
-      height = 500;
 
-  //Para clasificar en 6 intervalos iguales de población
-  var quantize = d3.scale.quantize()
-      .domain([0, 16000000])
-      .range(d3.range(5).map(function(i) { return "q" + i; }));
+<script>
+  var map = d3.select("#map");
 
-  var projection = d3.geo.mercator()
+  var edos = map.append("g")
+      .attr("id", "edos")
+      .selectAll("path");
+
+  var proj =  d3.geo.mercator()
     .center([-97.16, 21.411])
-    .scale(1000)
-  // .translate([width / 2, height / 2])
+    .scale(1000);
+  /*var proj = d3.geo.albers()
+    .origin([-105,24])
+    .parallels([14.5, 32.5])
+    .scale(1000);
+    //.translate([500, 800]);*/
 
-  var cartogram = d3.cartogram()
-   .projection(projection)
-   .value(function(d) {
-     return Math.random() * 100;
+  var quantize = d3.scale.quantize()
+    .domain([0, 16000000])
+    .range(d3.range(5).map(function(i) { return "q" + i; }));
+
+  var topology,
+      geometries,
+      carto_features;
+
+  var carto = d3.cartogram()
+      .projection(proj)
+      .properties(function (d) {
+          // this add the "properties" properties to the geometries
+          return d.properties;
+      });
+  d3.json("../data/des_estado_simple.json", function (data) {
+      topology = data;
+      geometries = topology.objects.desaparecidos_estatal.geometries;
+
+      //these 2 below create the map and are based on the topojson implementation
+      var features = carto.features(topology, geometries),
+          path = d3.geo.path()
+              .projection(proj);
+
+      edos = edos.data(features)
+          .enter()
+          .append("path")
+          .attr("class", "edos")
+          .attr("id", function (d) {
+              return d.properties.estado;
+          })
+          .attr("class", function(d) {
+            return quantize(d.properties['POB1']);
+          })
+          .attr("d", path);
+
+      edos.append("title")
+          .text(function (d) {
+              return d.properties.estado;
+          });
+
+      d3.select("#click_to_run").text("Haz cartograma");
   });
 
-  var path = d3.geo.path()
-      .projection(projection);
+  function doUpdate() {
+      d3.select("#click_to_run").text("Calculando...");
+      setTimeout(function () {
+          // this sets the value to use for scaling, per state.
+          // Here I used the total number of incidenes for 2012
+          // The scaling is stretched from 0 to the max of that year and
+          // mapped from 0 to max+1.
+          // Otherwise I get an ERROR when the propertie has 0s...
+          var scale = d3.scale.linear()
+          .domain([0, 1071])
+          .range([1, 1072]);
 
-  var svg = d3.select("#map-container").append("svg")
-      .attr("width", width)
-      .attr("height", height);
+          carto.value(function (d) {
+              return +scale(d.properties["2012"]);
+          });
 
-  d3.json("../data/des_estado.json", function(error, topology) {
-    console.log(topology);
-    if (error) throw error;
-    var features = cartogram(topology,topology.objects.desaparecidos_estatal.geometries);
-    console.log(svg);
-    svg.selectAll("path")
-       .data(features)
-       .enter()
-       .append("path")
-       .attr("d", cartogram.path);
-  });
-  </script>
+          if (carto_features == undefined)
+              //this regenrates the topology features for the new map based on
+              carto_features = carto(topology, geometries).features;
+
+          //update the map data
+          edos.data(carto_features)
+              .select("title")
+              .text(function (d) {
+                  return d.properties.estado+ ': '+d.properties["2012"];
+              });
+
+          edos.transition()
+              .duration(750)
+              .each("end", function () {
+                  d3.select("#click_to_run").text("Listo!")
+              })
+              .attr("d", carto.path);
+      }, 10);
+  }
+</script>
 </html>
