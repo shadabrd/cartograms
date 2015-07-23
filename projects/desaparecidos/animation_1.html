@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta property="og:image" content="placeholder.png">
     <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/queue.v1.min.js"></script>
     <script src="../lib/d3-cartogram/lib/colorbrewer.js"></script>
     <script src="../lib/d3-cartogram/lib/topojson.js"></script>
     <script src="../lib/d3-cartogram/cartogram.js"></script>
@@ -72,7 +73,7 @@
   //Every year except the first one which is called on the div onclick
   var years = ["2007","2008","2009","2010","2011","2012","2013","2014"]
   var map = d3.select("#map");
-
+  i = 0;//year counter
   var edos = map.append("g")
       .attr("id", "edos")
       .selectAll("path");
@@ -95,50 +96,26 @@
       carto_features,
       props;
 
+  //Insnantiate the cartogram with desired projection
   var carto = d3.cartogram()
       .projection(proj)
       .properties(function (d) {
           // this add the "properties" properties to the geometries
           return d.properties;
       });
-  d3.json("../data/des_estado_simple.json", function (data) {
-      topology = data;
-      geometries = topology.objects.desaparecidos_estatal.geometries;
 
-      //TODO:Extract values and get max for each year
-      // props = d3.map()
-      // geometries.forEach(function(d){
-      //   props.set(d.properties['estado'],d3.values(d.properties).slice(0,8))
-      //   }
-      // );
-      // geometries.forEach(function(d){
-      //   props.set(d.properties['estado'],d.properties)
-      //   }
-      // );
-      //these 2 below create the map and are based on the topojson implementation
-      var features = carto.features(topology, geometries),
-          path = d3.geo.path()
-              .projection(proj);
 
-      edos = edos.data(features)
-          .enter()
-          .append("path")
-          .attr("class", "edos")
-          .attr("id", function (d) {
-              return d.properties.estado;
-          })
-          .attr("class", function(d) {
-            return quantize(d.properties['POB1']);
-          })
-          .attr("d", path);
+  //Build a queue to load all data files
+  queue()
+	.defer(d3.json, '../data/des_estado_simple.json')
+	.defer(d3.csv, '../data/desaparecidos_estatal.csv')
+	.await(restOfCode);
 
-      edos.append("title")
-          .text(function (d) {
-              return d.properties.estado;
-          });
-
-      d3.select("#click_to_run").text("Haz cartograma");
-  });
+  function restOfCode(error,topo,csv){
+    // console.log(topo);
+    console.log(csv);
+    makeMap(topo);
+  }
 
   //Triggers a callback at the end of the last transition
   function endAll (transition, callback) {
@@ -156,50 +133,89 @@
           });
       }
   }
-  i = 0;//year counter
+
+  //Computes updated features and draws the new cartogram
   function doUpdate(year) {
+      // this sets the value to use for scaling, per state.
+      // Here I used the total number of incidenes for 2012
+      // The scaling is stretched from 0 to the max of that year and
+      // mapped from 0 to max+1.
+      // Otherwise I get an ERROR when the propertie has 0s...
+      var scale = d3.scale.linear()
+      .domain([0, 1071])
+      .range([1, 1072]);
 
-      setTimeout(function () {
-          // this sets the value to use for scaling, per state.
-          // Here I used the total number of incidenes for 2012
-          // The scaling is stretched from 0 to the max of that year and
-          // mapped from 0 to max+1.
-          // Otherwise I get an ERROR when the propertie has 0s...
-          var scale = d3.scale.linear()
-          .domain([0, 1071])
-          .range([1, 1072]);
+      carto.value(function (d) {
+          return +scale(d.properties[year]);
+      });
 
-          carto.value(function (d) {
-              return +scale(d.properties[year]);
+      if (carto_features == undefined)
+          //this regenrates the topology features for the new map based on
+          carto_features = carto(topology, geometries).features;
+
+      //update the map data
+      edos.data(carto_features)
+          .select("title")
+          .text(function (d) {
+              return d.properties.estado+ ': '+d.properties[year];
           });
 
-          if (carto_features == undefined)
-              //this regenrates the topology features for the new map based on
-              carto_features = carto(topology, geometries).features;
+      edos.transition()
+          .duration(900)
+          .each("end", function () {
+              d3.select("#click_to_run").text("Listo!")
+          })
+          .attr("d", carto.path)
+          .call(endAll, function () {
+            if(i < years.length){
+              carto_features = undefined //reset features
+              doUpdate(years[i]);
+              d3.select("#click_to_run").text(years[i]);
+              i++
+            }
+          });
+  }
 
-          //update the map data
-          edos.data(carto_features)
-              .select("title")
-              .text(function (d) {
-                  return d.properties.estado+ ': '+d.properties[year];
-              });
+  //Draws original map
+  function makeMap(data){
+    topology = data;
+    geometries = topology.objects.desaparecidos_estatal.geometries;
 
-          edos.transition()
-              .duration(900)
-              .each("end", function () {
-                  d3.select("#click_to_run").text("Listo!")
-              })
-              .attr("d", carto.path)
-              .call(endAll, function () {
-                if(i < years.length){
-                  carto_features = undefined //reset features
-                  doUpdate(years[i]);
-                  d3.select("#click_to_run").text(years[i]);
-                  i++
-                }
-              });
+    //TODO:Extract values and get max for each year
+    props = {}
+    geometries.forEach(function(d){
+      props[d.properties['estado']] = d.properties
+      }
+    );
+    // geometries.forEach(function(d){
+    //   props.set(d.properties['estado'],d.properties)
+    //   }
+    // );
 
-      }, 10);
+    //these 2 below create the map and are based on the topojson implementation
+    var features = carto.features(topology, geometries),
+        path = d3.geo.path()
+            .projection(proj);
+
+    edos = edos.data(features)
+        .enter()
+        .append("path")
+        .attr("class", "edos")
+        .attr("id", function (d) {
+            return d.properties.estado;
+        })
+        .attr("class", function(d) {
+          return quantize(d.properties['POB1']);
+        })
+        .attr("d", path);
+
+    edos.append("title")
+        .text(function (d) {
+            return d.properties.estado;
+        });
+
+    d3.select("#click_to_run").text("Haz cartograma");
+
   }
 </script>
 </html>
