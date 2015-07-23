@@ -108,12 +108,16 @@
   //Build a queue to load all data files
   queue()
 	.defer(d3.json, '../data/des_estado_simple.json')
-	.defer(d3.csv, '../data/desaparecidos_estatal.csv')
-	.await(restOfCode);
+  //.defer(d3.csv, '../data/desaparecidos_estatal.csv',rowFormatter(d))
+	.defer(d3.csv, '../data/desaparecidos_estatal.csv',function(d) {
+    return {estado: d.estado, poblacion: +d.POB1};
+  })
+	.await(ready);
 
-  function restOfCode(error,topo,csv){
+  function ready(error,topo,csv){
     // console.log(topo);
-    console.log(csv);
+    //console.log(csv);
+    props = csv
     makeMap(topo);
   }
 
@@ -180,17 +184,6 @@
   function makeMap(data){
     topology = data;
     geometries = topology.objects.desaparecidos_estatal.geometries;
-
-    //TODO:Extract values and get max for each year
-    props = {}
-    geometries.forEach(function(d){
-      props[d.properties['estado']] = d.properties
-      }
-    );
-    // geometries.forEach(function(d){
-    //   props.set(d.properties['estado'],d.properties)
-    //   }
-    // );
 
     //these 2 below create the map and are based on the topojson implementation
     var features = carto.features(topology, geometries),
