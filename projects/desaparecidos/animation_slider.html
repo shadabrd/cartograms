@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Cartograms with d3 &amp; TopoJSON</title>
+    <meta charset="utf-8">
+    <meta property="og:image" content="placeholder.png">
+    <link rel="stylesheet" href="../lib/d3.slider/d3.slider.css" />
+    <style type="text/css">
+
+      body {
+        font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+        font-size: 14px;
+        line-height: 1.4em;
+        padding: 0;
+        margin: 0;
+      }
+      #wrapper{
+        width:600px;
+      }
+      #map-container {
+        height: 400px;
+        /*width:500px;*/
+        position: relative;
+        margin: 10px 0;
+      }
+      #map {
+        overflow: visible;
+      }
+      #slider{
+        margin-left: 75px;
+      }
+      /*#click_to_run {
+            color:#888;
+            width: 600px;
+            font-size: 2em;
+            text-align: center;
+            cursor: pointer;
+            padding-top: 30px;
+      }*/
+      path[class^="q"] {
+          stroke: #000000;
+          stroke-width: .5;
+      }
+      path[class^="q"]:hover {
+          stroke: #FFF;
+      }
+      .states {
+        fill: none;
+        stroke: grey;
+        stroke-linejoin: round;
+      }
+
+    /*Los colores para las clases de población*/
+    .q0 { fill:#fcc383; }
+    .q1 { fill:#fc9f67; }
+    .q2 { fill:#f4794e; }
+    .q3 { fill:#e65338; }
+    .q4 { fill:#ce2a1d; }
+    .q5 { fill:#b30000; }
+    /*.q6 { fill:rgb(33,113,181); }
+    .q7 { fill:rgb(8,81,156); }
+    .q8 { fill:rgb(8,48,107); }*/
+    </style>
+  </head>
+  <body>
+    <!-- <div id="click_to_run" onclick="doUpdate('2006')"></div> -->
+    <div id="wrapper">
+      <div id="map-container">
+        <svg id="map"></svg>
+      </div>
+      <div id="slider"></div>
+    </div>
+
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/queue.v1.min.js"></script>
+    <script src="../lib/d3-cartogram/lib/colorbrewer.js"></script>
+    <script src="../lib/d3-cartogram/lib/topojson.js"></script>
+    <script src="../lib/d3-cartogram/cartogram.js"></script>
+    <script src="../lib/d3.slider/d3.slider.js"></script>
+    <script src="functions.js"></script>
+  </body>
+</html>
