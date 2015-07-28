@@ -101,60 +101,17 @@ function makeMap(data){
 }
 
 function doAnimation(startYear){
-  console.log("me animo " + startYear);
+  console.log("inicio "+ startYear);
   startIndex = years.indexOf(startYear.toString())
-  console.log(startIndex);
-  //
-  // //mySlider.value(2010)
+  if (startIndex !== 0){
+    console.log("hereeeee");
+    startIndex = startIndex +1
+  }
   for(i=startIndex;i<years.length;i++){
     window.setTimeout(function(step){
-      mySlider.value(years[step])
+      mySlider.value(parseInt(years[step]))
     },i*1500,i)
   }
-  //   //console.log(startIndex);
-  //   //mySlider.value(years[i])
-  // }
-  // // if (startYear === 2006){
-  // //   console.log(startYear);
-  // // }
-  // //startYear = startYear || "2006";
-  // //console.log(startYear);
-  // startIndex = years.indexOf(startYear.toString())
-  // //console.log(years.indexOf(startYear.toString()));
-  // var scale = d3.scale.linear()
-  // .domain([0, maxPerYear[startYear]])
-  // .range([1, 1000]);
-  //
-  // carto.value(function (d) {
-  //     return +scale(d.properties[startYear]);
-  // });
-  //
-  // if (carto_features == undefined)
-  //     //this regenrates the topology features for the new map based on
-  //     carto_features = carto(topology, geometries).features;
-  //
-  // //update the map data
-  // edos.data(carto_features)
-  //     .select("title")
-  //     .text(function (d) {
-  //         return d.properties.estado+ ': '+d.properties[startYear];
-  //     });
-  //
-  // edos.transition()
-  //     .duration(900)
-  //     .each("end", function () {
-  //         d3.select("#click_to_run").text("Listo!")
-  //     })
-  //     .attr("d", carto.path)
-  //     .call(endAll, function () {
-  //       if(startIndex < years.length - 1){
-  //         carto_features = undefined //reset features
-  //         mySlider.value(years[startIndex +1])
-  //         doAnimation(years[startIndex +1]);
-  //         //console.log(years[startIndex +1]);
-  //
-  //       }
-  //     });
 }
 
 //////////

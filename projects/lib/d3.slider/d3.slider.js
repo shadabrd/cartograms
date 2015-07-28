@@ -261,10 +261,12 @@ return function module() {
 
   // Move slider handle on click/drag
   function moveHandle(newValue) {
+    //console.log(toType(value));
     var currentValue = toType(value) == "array"  && value.length == 2 ? value[active - 1]: value,
         oldPos = formatPercent(scale(stepValue(currentValue))),
         newPos = formatPercent(scale(stepValue(newValue))),
         position = (orientation === "horizontal") ? "left" : "bottom";
+    //console.log(toType(value))
     if (oldPos !== newPos) {
 
       if (toType(value) == "array" && value.length == 2) {
@@ -273,12 +275,15 @@ return function module() {
           dispatch.slide(d3.event, value );
         };
       } else {
+
         if (d3.event) {
           dispatch.slide(d3.event.sourceEvent || d3.event, value = newValue);
         };
       }
+      if ( value[ 0 ] >= value[ 1 ] ){
+        return;
+      }
 
-      if ( value[ 0 ] >= value[ 1 ] ) return;
       if ( active === 1 ) {
         if (toType(value) == "array" && value.length == 2) {
           (position === "left") ? divRange.style("left", newPos) : divRange.style("bottom", newPos);
@@ -287,7 +292,9 @@ return function module() {
         if (animate) {
           handle1.transition()
               .styleTween(position, function() { return d3.interpolate(oldPos, newPos); })
-              .duration((typeof animate === "number") ? animate : 250);
+              .duration((typeof animate === "number") ? animate : 250)
+              .each("end",function(){
+              });
         } else {
           handle1.style(position, newPos);
         }
@@ -402,7 +409,7 @@ return function module() {
     if (!arguments.length) return value;
     if (value) {
       moveHandle(stepValue(_));
-      dispatch.slide(d3.event, _ );
+      dispatch.slide(d3.event,_);
     };
     value = _;
     return slider;
