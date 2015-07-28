@@ -100,6 +100,63 @@ function makeMap(data){
 
 }
 
+function doAnimation(startYear){
+  console.log("me animo " + startYear);
+  startIndex = years.indexOf(startYear.toString())
+  console.log(startIndex);
+  //
+  // //mySlider.value(2010)
+  for(i=startIndex;i<years.length;i++){
+    window.setTimeout(function(step){
+      mySlider.value(years[step])
+    },i*1500,i)
+  }
+  //   //console.log(startIndex);
+  //   //mySlider.value(years[i])
+  // }
+  // // if (startYear === 2006){
+  // //   console.log(startYear);
+  // // }
+  // //startYear = startYear || "2006";
+  // //console.log(startYear);
+  // startIndex = years.indexOf(startYear.toString())
+  // //console.log(years.indexOf(startYear.toString()));
+  // var scale = d3.scale.linear()
+  // .domain([0, maxPerYear[startYear]])
+  // .range([1, 1000]);
+  //
+  // carto.value(function (d) {
+  //     return +scale(d.properties[startYear]);
+  // });
+  //
+  // if (carto_features == undefined)
+  //     //this regenrates the topology features for the new map based on
+  //     carto_features = carto(topology, geometries).features;
+  //
+  // //update the map data
+  // edos.data(carto_features)
+  //     .select("title")
+  //     .text(function (d) {
+  //         return d.properties.estado+ ': '+d.properties[startYear];
+  //     });
+  //
+  // edos.transition()
+  //     .duration(900)
+  //     .each("end", function () {
+  //         d3.select("#click_to_run").text("Listo!")
+  //     })
+  //     .attr("d", carto.path)
+  //     .call(endAll, function () {
+  //       if(startIndex < years.length - 1){
+  //         carto_features = undefined //reset features
+  //         mySlider.value(years[startIndex +1])
+  //         doAnimation(years[startIndex +1]);
+  //         //console.log(years[startIndex +1]);
+  //
+  //       }
+  //     });
+}
+
 //////////
 //Globals
 //////////
@@ -125,7 +182,8 @@ var topology,
     geometries,
     carto_features,
     maxPerYear,
-    byState;
+    byState,
+    mySlider;
 
 //Insnantiate the cartogram with desired projection
 var carto = d3.cartogram()
@@ -136,31 +194,38 @@ var carto = d3.cartogram()
     });
 
 
-
-
 function main(){
 
   //Slider
   var axis = d3.svg.axis().orient("bottom").ticks(8)
   axis.tickFormat(d3.format("d"))
-  d3.select('#slider')
-  .call(d3.slider()
+  mySlider = d3.slider()
   .axis(axis)
   .min(2006)
   .max(2014)
   .step(1)
   .on("slide", function(evt, value) {
-    doUpdate(value)
-  }));
+    doUpdate(value);
+  })
+  .on("slideend", function(evt, value) {
+    console.log('end');
+  })
+  ;
+  d3.select('#slider').call(mySlider)
 
   //Build a queue to load all data files
   queue()
   .defer(d3.json, '../data/des_estado_simple.json')
   .defer(d3.csv, '../data/desaparecidos_estatal.csv',function(d) {
     delete d.POB1
-    return d
+    return d;
   })
   .await(ready);
+
+  d3.select('#play')
+  .on("click", function(evt) {
+    doAnimation(mySlider.value());
+  });
 
 }
 
