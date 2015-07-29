@@ -150,7 +150,7 @@ var proj =  d3.geo.mercator()
 
 var quantize = d3.scale.quantize()
   .domain([0, 16000000])
-  .range(d3.range(5).map(function(i) { return "q" + i; }));
+  .range(d3.range(8).map(function(i) { return "q" + i; }));
 
 var topology,
     geometries,
