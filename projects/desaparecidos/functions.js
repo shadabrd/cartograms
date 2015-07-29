@@ -1,16 +1,23 @@
 function ready(error,topo,csv){
   //Compute max values for each year and store it in maxPerYear
   maxPerYear = {}
+  maxRatePerYear = {}
   years.forEach(function(y){
-    thisYear =[]
+    thisYear = []
+    thisRate = []
     csv.forEach(function(element){
       thisYear.push(parseInt(element[y]))
+      var rate = (parseFloat(element[y])/parseFloat(element['POB1']))*100000
+      thisRate.push(rate)
 
     })
-    maxPerYear[y] = d3.max(thisYear)
+    maxPerYear[y] = d3.max(thisYear);
+    maxRatePerYear[y] = d3.max(thisRate)
   });
+
   //nest values under state key
   byState = d3.nest().key(function(d){return d.estado}).map(csv)
+
   //make map
   makeMap(topo);
 }
@@ -39,12 +46,22 @@ function doUpdate(year) {
     // The scaling is stretched from 0 to the max of that year and
     // mapped from 0 to max+1.
     // Otherwise I get an ERROR when the propertie has 0s...
-    var scale = d3.scale.linear()
-    .domain([0, maxPerYear[year]])
-    .range([1, 1000]);
+
 
     carto.value(function (d) {
+      if (cartoValue === 'cantidad'){
+        var scale = d3.scale.linear()
+        .domain([0, maxPerYear[year]])
+        .range([1, 1000]);
         return +scale(d.properties[year]);
+      }else{
+        var scale = d3.scale.linear()
+        .domain([0, maxRatePerYear[year]])
+        .range([1, 1000]);
+        var rate = 100000*(parseFloat(d.properties[year])/parseFloat(d.properties["POB1"]))
+        return +scale(rate)
+      }
+
     });
 
     if (carto_features == undefined)
@@ -139,8 +156,10 @@ var topology,
     geometries,
     carto_features,
     maxPerYear,
+    maxRatePerYear,
     byState,
-    mySlider;
+    mySlider,
+    cartoValue = 'cantidad';
 
 //Insnantiate the cartogram with desired projection
 var carto = d3.cartogram()
@@ -174,10 +193,20 @@ function main(){
   queue()
   .defer(d3.json, '../data/des_estado_simple.json')
   .defer(d3.csv, '../data/desaparecidos_estatal.csv',function(d) {
-    delete d.POB1
     return d;
   })
   .await(ready);
+
+  //Add listener to radio buttons and set cartogram variable
+  d3.selectAll('input[name="cartogram-value"]')
+    .on("change", function(event,data){
+        if (data === 0){
+          cartoValue = 'cantidad'
+        }else{
+          cartoValue = 'tasa'
+        }
+        doUpdate(mySlider.value())
+      });
 
   d3.select('#play')
   .on("click", function(evt) {
