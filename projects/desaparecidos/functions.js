@@ -118,16 +118,16 @@ function makeMap(data){
 }
 
 function doAnimation(startYear){
-  console.log("inicio "+ startYear);
   startIndex = years.indexOf(startYear.toString())
   if (startIndex !== 0){
-    console.log("hereeeee");
     startIndex = startIndex +1
   }
+  var frameCount = 0;
   for(i=startIndex;i<years.length;i++){
     window.setTimeout(function(step){
       mySlider.value(parseInt(years[step]))
-    },i*1500,i)
+    },frameCount*1500,i);
+    frameCount ++
   }
 }
 
@@ -146,7 +146,8 @@ var edos = map.append("g")
 
 var proj =  d3.geo.mercator()
   .center([-97.16, 21.411])
-  .scale(1000);
+  .scale(1000)
+  .translate([300,300]);//TODO: set this value
 
 var quantize = d3.scale.quantize()
   .domain([0, 16000000])
